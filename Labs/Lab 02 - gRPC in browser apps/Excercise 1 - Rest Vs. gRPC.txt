@@ -1,0 +1,2 @@
+Follow the steps in this blog post to create a Blazor WebAssembly application which consumes both a Restful API and a gRPC service and compare the performance and payload size.
+https://medium.com/@waelkdouh/how-to-utilize-grpc-web-from-a-blazor-webassembly-application-e8313444f75b
