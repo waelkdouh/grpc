@@ -1,0 +1,145 @@
+Step 1: Create a new project and call it GrpcVersioning
+
+Step 2: Apply the following modification to the greet.proto file:
+	- Remove the following line in order to start using the package as the new namespace  
+	  option csharp_namespace = "GrpcService1";
+	- Change the package name to the following package greet.v1;
+
+Step 3: Create a copy of the greet.proto and name it greetV2.proto. Apply the following 
+        modification to the greet.proto file:
+	- Change the package name to the following package greet.v2;
+	- Add the following field to the HelloReply message  
+	  int32 Age = 2;
+
+Step 4: Modify the content of the existing GreeterService.cs file to include the 
+        following:
+		using Greet.V1;
+		using Grpc.Core;
+		using Microsoft.Extensions.Logging;
+		using System;
+		using System.Collections.Generic;
+		using System.Linq;
+		using System.Threading.Tasks;
+
+		namespace GrpcVersioning
+		{
+			public class GreeterService : Greeter.GreeterBase
+			{
+				private readonly ILogger<GreeterService> _logger;
+				public GreeterService(ILogger<GreeterService> logger)
+				{
+					_logger = logger;
+				}
+
+				public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+				{
+					return Task.FromResult(new HelloReply
+					{
+						Message = "Hello " + request.Name
+					});
+				}
+			}
+		}
+		
+Step 5: Create a copy of the GreeterService.cs file and call it GreeterServiceV2.cs.  
+        Paste the following code in the newly created file:
+		using Greet.V2;
+		using Grpc.Core;
+		using Microsoft.Extensions.Logging;
+		using System;
+		using System.Collections.Generic;
+		using System.Linq;
+		using System.Threading.Tasks;
+
+		namespace GrpcVersioning
+		{
+			public class GreeterServiceV2 : Greeter.GreeterBase
+			{
+				private readonly ILogger<GreeterServiceV2> _logger;
+				public GreeterServiceV2(ILogger<GreeterServiceV2> logger)
+				{
+					_logger = logger;
+				}
+
+				public override Task<HelloReply> SayHello(HelloRequest request, ServerCallContext context)
+				{
+					return Task.FromResult(new HelloReply
+					{
+						Message = "Hello " + request.Name,
+						Age = 42
+					});
+				}
+			}
+		}
+
+Step 6: Modify the Startup.cs file to include the following endpoints:
+		app.UseEndpoints(endpoints =>
+					{
+						endpoints.MapGrpcService<GreeterService>();
+						endpoints.MapGrpcService<GreeterServiceV2>();
+					});
+					
+					
+					
+Step 7: Add a new console app (Console App (.Net Core)) which will serve as the client application to consume version V1 of the service. Name the application "Client".
+
+Step 8: Right click on the project and "Add"->"Service Reference". Add a gRPC service 
+        reference to greet.proto file. At this point you should have the client .net code to consume the service generated for you.
+
+Step 9: Modify the program.cs to include the following code which will consume the V1 of 
+        the service.
+		using Greet.V1;
+		using Grpc.Net.Client;
+		using System;
+		using System.Threading.Tasks;
+
+		namespace Client
+		{
+			class Program
+			{
+				static async Task Main(string[] args)
+				{
+					var input = new HelloRequest { Name = "wael" };
+
+					var channel = GrpcChannel.ForAddress("https://localhost:5001");
+					var client = new Greeter.GreeterClient(channel);
+					var reply = await client.SayHelloAsync(input);
+					Console.WriteLine(reply.Message);
+					Console.ReadLine();
+				}
+			}
+		}
+
+Step 10: Remember that we need to start the correct projects. So set the solution to start the server and client at the same time. 		
+		
+Step 11: Add a new console app (Console App (.Net Core)) which will serve as the client application to consume version V2 of the service. Name the application "ClientV2".
+
+Step 12: Right click on the project and "Add"->"Service Reference". Add a gRPC service 
+        reference to greetV2.proto file. At this point you should have the client .net code to consume the service generated for you.
+
+Step 13: Modify the program.cs to include the following code which will consume the V2 of 
+        the service. Notice in this example the reply includes an "Age" field which was not included in the V1 of the service.
+        using Greet.V2;
+		using Grpc.Net.Client;
+		using System;
+		using System.Threading.Tasks;
+
+		namespace ClientV2
+		{
+			class Program
+			{
+				static async Task Main(string[] args)
+				{
+					var input = new HelloRequest { Name = "wael" };
+
+					var channel = GrpcChannel.ForAddress("https://localhost:5001");
+					var client = new Greeter.GreeterClient(channel);
+					var reply = await client.SayHelloAsync(input);
+					Console.WriteLine(reply.Message + " you are now " + reply.Age + " old");
+					Console.ReadLine();
+				}
+			}
+		}
+
+	
+Step 14: Remember that we need to start the correct projects. So set the solution to start the server and clientV2 at the same time. 		
